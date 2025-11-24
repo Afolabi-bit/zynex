@@ -4,7 +4,7 @@ import StatsOverviewCards from "@/components/dashboard/StatsOverviewCards";
 import AnalyticsAndRecentTabs from "@/components/dashboard/AnalyticsAndRecentTabs";
 import NewTest from "@/components/dashboard/NewTest";
 import { redirect } from "next/navigation";
-import DashboardNav from "@/components/dashboard/nav";
+import DashboardNav from "@/components/dashboard/DashboardNav";
 
 export default async function DashboardPage() {
   const user = await getSessionUser();
@@ -18,7 +18,7 @@ export default async function DashboardPage() {
       <DashboardNav user={user} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Welcome />
+        <Welcome user={user} />
 
         <StatsOverviewCards />
 
