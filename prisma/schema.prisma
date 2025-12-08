@@ -12,3 +12,32 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  domains   Domain[]
+}
+
+model Domain {
+  id Int @id @default(autoincrement())
+  url String @unique
+  owner User @relation(fields: [ownerId], references: [id])
+  ownerId Int
+  tests Test[]
+}
+
+model Test {
+  id Int @id @default(autoincrement())
+  domain Domain @relation(fields: [domainId], references: [id])
+  domainId Int
+  metrics TestMetric[]
+}
+
+model TestMetric {
+  id Int @id @default(autoincrement())
+  test Test @relation(fields: [testId], references: [id])
+  testId Int
+}
