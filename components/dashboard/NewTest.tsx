@@ -25,6 +25,10 @@ const NewTest = () => {
     const urlvalidation = isValidUrl(url);
     setIsUrlValid(urlvalidation);
 
+    if (urlvalidation.validity === false) {
+      return;
+    }
+
     const req = await fetch("/api/test/submit", {
       method: "POST",
       headers: {

@@ -5,6 +5,7 @@ import AnalyticsAndRecentTabs from "@/components/dashboard/AnalyticsAndRecentTab
 import NewTest from "@/components/dashboard/NewTest";
 import { redirect } from "next/navigation";
 import DashboardNav from "@/components/dashboard/DashboardNav";
+import addUserToDB from "../utils/addUserToDB";
 
 export default async function DashboardPage() {
   const user = await getSessionUser();
@@ -12,6 +13,10 @@ export default async function DashboardPage() {
   if (!user) {
     redirect("/api/auth/register");
   }
+
+  await addUserToDB();
+
+  console.log("Dashboard page user:", user);
 
   return (
     <div className="min-h-screen bg-gray-50">
