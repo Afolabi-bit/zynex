@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import { FormEvent, useState } from "react";
 import {
   Card,
   CardContent,
@@ -10,8 +12,35 @@ import { Loader2, Zap } from "lucide-react";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import isValidUrl from "@/app/utils/validateUrl";
 
 const NewTest = () => {
+  const [url, setUrl] = useState("");
+  const [device, setDevice] = useState("Desktop");
+  const [network, setNetwork] = useState("No Throttling");
+  const [isUrlValid, setIsUrlValid] = useState({ validity: true, message: "" });
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    const urlvalidation = isValidUrl(url);
+    setIsUrlValid(urlvalidation);
+
+    const req = await fetch("/api/test/submit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        url,
+        device,
+        network,
+      }),
+    });
+
+    const res = await req.json();
+    console.log(res);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -24,26 +53,49 @@ const NewTest = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-          <div className="md:col-span-6">
+        <form
+          onSubmit={(e) => handleSubmit(e)}
+          className="grid grid-cols-1 md:grid-cols-12 gap-4"
+        >
+          <div className="md:col-span-6 relative">
             <Label htmlFor="url">Website URL</Label>
             <Input
               id="url"
-              type="url"
               placeholder="https://example.com"
-              className="mt-1"
+              onChange={(e) => setUrl(e.target.value)}
+              onClick={() => setIsUrlValid({ validity: true, message: "" })}
+              className={
+                isUrlValid.validity
+                  ? "mt-1"
+                  : "mt-1 outline-red-600 border-red-600"
+              }
             />
+            <span
+              className={
+                isUrlValid.validity ? "hidden" : "text-red-600 text-sm"
+              }
+            >
+              {isUrlValid.message}
+            </span>
           </div>
           <div className="md:col-span-2">
             <Label htmlFor="device">Device</Label>
-            <select className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
+            <select
+              value={device}
+              onChange={(e) => setDevice(e.target.value)}
+              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
+            >
               <option>Desktop</option>
               <option>Mobile</option>
             </select>
           </div>
           <div className="md:col-span-2">
             <Label htmlFor="network">Network</Label>
-            <select className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
+            <select
+              value={network}
+              onChange={(e) => setNetwork(e.target.value)}
+              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
+            >
               <option>No Throttling</option>
               <option>4G</option>
               <option>3G</option>
@@ -64,7 +116,7 @@ const NewTest = () => {
               )}
             </Button>
           </div>
-        </div>
+        </form>
       </CardContent>
     </Card>
   );
