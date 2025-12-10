@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "./db";
+import prisma from "@/lib/db";
 import { KindeUser } from "@kinde-oss/kinde-auth-nextjs";
 
 export async function syncUserToDatabase(user: KindeUser) {
