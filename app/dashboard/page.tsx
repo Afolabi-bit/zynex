@@ -5,9 +5,10 @@ import AnalyticsAndRecentTabs from "@/components/dashboard/AnalyticsAndRecentTab
 import NewTest from "@/components/dashboard/NewTest";
 import { redirect } from "next/navigation";
 import DashboardNav from "@/components/dashboard/DashboardNav";
+import { KindeUser } from "@kinde-oss/kinde-auth-nextjs";
 
 export default async function DashboardPage() {
-  const user = await getSessionUser();
+  const user = (await getSessionUser()) as KindeUser;
 
   if (!user) {
     redirect("/api/auth/register");
@@ -22,7 +23,7 @@ export default async function DashboardPage() {
 
         <StatsOverviewCards />
 
-        <NewTest />
+        <NewTest user={user} />
 
         <AnalyticsAndRecentTabs />
       </div>

@@ -13,8 +13,9 @@ import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import isValidUrl from "@/app/utils/validateUrl";
+import { KindeUser } from "@kinde-oss/kinde-auth-nextjs";
 
-const NewTest = () => {
+const NewTest = ({ user }: { user: KindeUser }) => {
   const [url, setUrl] = useState("");
   const [device, setDevice] = useState("Desktop");
   const [network, setNetwork] = useState("No Throttling");
@@ -25,7 +26,7 @@ const NewTest = () => {
     const urlvalidation = isValidUrl(url);
     setIsUrlValid(urlvalidation);
 
-    if (urlvalidation.validity === false) {
+    if (urlvalidation.validity === false || !user) {
       return;
     }
 
@@ -35,6 +36,7 @@ const NewTest = () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        userID: user.id,
         url,
         device,
         network,

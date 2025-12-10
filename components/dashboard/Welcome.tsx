@@ -1,6 +1,6 @@
-import { myKindeUser } from "@/types/types";
+import { KindeUser } from "@kinde-oss/kinde-auth-nextjs";
 
-const Welcome = ({ user }: myKindeUser) => {
+const Welcome = ({ user }: { user: KindeUser }) => {
   return (
     <div className="mb-8">
       <h1 className="text-3xl font-bold text-gray-900">

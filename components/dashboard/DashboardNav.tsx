@@ -2,10 +2,10 @@ import React from "react";
 import { Button } from "../ui/button";
 import { Settings, User, Zap } from "lucide-react";
 import Image from "next/image";
-import { myKindeUser } from "@/types/types";
 import Link from "next/link";
+import { KindeUser } from "@kinde-oss/kinde-auth-nextjs";
 
-const DashboardNav = ({ user }: myKindeUser) => {
+const DashboardNav = ({ user }: { user: KindeUser }) => {
   return (
     <nav className="bg-white border-b sticky top-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

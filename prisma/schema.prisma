@@ -23,6 +23,8 @@ model User {
 model Domain {
   id Int @id @default(autoincrement())
   url String @unique
+  device String
+  network String
   owner User @relation(fields: [ownerId], references: [id])
   ownerId String
   tests Test[]
