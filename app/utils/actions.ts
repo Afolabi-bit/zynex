@@ -24,28 +24,49 @@ export async function syncUserToDatabase(user: KindeUser) {
   }
 }
 
-export async function submitDomain(domain: Domain) {
-  console.log("Submitting domain:", domain);
+export async function submitDomain(data: Domain) {
+  console.log("Submitting domain:", data);
+
   try {
-    const existsForUser = await prisma.domain.findUnique({
+    // const cleanUrl = data.url.trim().replace(/\/$/, "");
+
+    const existingDomain = await prisma.domain.findFirst({
       where: {
-        url: domain.url,
-        ownerId: domain.userID,
+        url: data.url,
+        ownerId: data.userID,
       },
     });
 
-    if (!existsForUser) {
+    if (existingDomain) {
+      return {
+        success: false,
+        message: "Domain already exists for user",
+      };
+    } else {
       console.log("Domain does not exist for user, creating...");
-      await prisma.domain.create({
+      const domain = await prisma.domain.create({
         data: {
-          url: domain.url,
-          device: domain.device,
-          network: domain.network,
-          ownerId: domain.userID,
+          url: data.url,
+          device: data.device,
+          network: data.network,
+          ownerId: data.userID,
         },
       });
+      console.log("Domain created:", domain.id);
     }
+
+    return {
+      success: true,
+      // domainId: domain.id,
+      url: data.url,
+    };
   } catch (error) {
     console.error("Error submitting domain:", error);
+
+    // Re-throw the error with a clear message
+    if (error instanceof Error) {
+      throw new Error(`Failed to submit domain: ${error.message}`);
+    }
+    throw new Error("Failed to submit domain");
   }
 }

@@ -23,6 +23,7 @@ const NewTest = ({ user }: { user: KindeUser }) => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
     const urlvalidation = isValidUrl(url);
     setIsUrlValid(urlvalidation);
 
