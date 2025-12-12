@@ -40,9 +40,11 @@ export async function submitDomain(data: Domain) {
           status: "pending",
         },
       });
+
       return {
         success: true,
         message: "New test submitted for existing domain",
+        testId: test.id,
       };
     } else {
       const domain = await prisma.domain.create({
@@ -59,12 +61,12 @@ export async function submitDomain(data: Domain) {
           status: "pending",
         },
       });
+      return {
+        success: true,
+        message: "New test submitted for new domain",
+        testId: test.id,
+      };
     }
-
-    return {
-      success: true,
-      url: data.url,
-    };
   } catch (error) {
     console.error("Error submitting domain:", error);
 
