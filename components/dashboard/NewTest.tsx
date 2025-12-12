@@ -20,6 +20,7 @@ const NewTest = ({ user }: { user: KindeUser }) => {
   const [device, setDevice] = useState("Desktop");
   const [network, setNetwork] = useState("No Throttling");
   const [isUrlValid, setIsUrlValid] = useState({ validity: true, message: "" });
+  const [isTesting, setIsTesting] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -31,6 +32,7 @@ const NewTest = ({ user }: { user: KindeUser }) => {
       return;
     }
 
+    setIsTesting(true);
     const req = await fetch("/api/test/submit", {
       method: "POST",
       headers: {
@@ -109,8 +111,12 @@ const NewTest = ({ user }: { user: KindeUser }) => {
             </select>
           </div>
           <div className="md:col-span-2 flex items-end">
-            <Button className="w-full bg-blue-600 hover:bg-blue-700">
-              {false ? (
+            <Button
+              className={`w-full bg-blue-600 hover:bg-blue-700  ${
+                isTesting ? "cursor-not-allowed " : "cursor-pointer "
+              }`}
+            >
+              {isTesting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Testing...

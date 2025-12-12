@@ -41,8 +41,8 @@ export async function submitDomain(data: Domain) {
         },
       });
       return {
-        success: false,
-        message: "Domain already exists for user",
+        success: true,
+        message: "New test submitted for existing domain",
       };
     } else {
       const domain = await prisma.domain.create({
