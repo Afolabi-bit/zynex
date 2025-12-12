@@ -77,3 +77,17 @@ export async function submitDomain(data: Domain) {
     throw new Error("Failed to submit domain");
   }
 }
+
+export async function getTestStatus(id: number) {
+  try {
+    const test = await prisma.test.findUnique({
+      where: {
+        id: id,
+      },
+    });
+    return test;
+  } catch (error) {
+    console.error("Error getting test status:", error);
+    throw new Error("Failed to get test status");
+  }
+}

@@ -48,6 +48,10 @@ const NewTest = ({ user }: { user: KindeUser }) => {
 
     const res = await req.json();
     console.log(res);
+
+    const test = await fetch(`/api/test/${res.data.testId}/status`);
+    const testRes = await test.json();
+    console.log(testRes);
   };
 
   return (
