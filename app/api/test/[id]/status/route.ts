@@ -3,7 +3,7 @@ import { getTestStatus } from "@/app/utils/actions";
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> } // params is now a Promise
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;

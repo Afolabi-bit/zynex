@@ -91,3 +91,23 @@ export async function getTestStatus(id: number) {
     throw new Error("Failed to get test status");
   }
 }
+
+export async function getRecentTests(userID: string) {
+  try {
+    const tests = await prisma.test.findMany({
+      where: {
+        domain: {
+          ownerId: userID,
+        },
+      },
+      include: {
+        domain: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    return tests;
+  } catch (error) {
+    console.error("Error getting recent tests:", error);
+    throw new Error("Failed to get recent tests");
+  }
+}

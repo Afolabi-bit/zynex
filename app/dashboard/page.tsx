@@ -25,7 +25,7 @@ export default async function DashboardPage() {
 
         <NewTest user={user} />
 
-        <AnalyticsAndRecentTabs />
+        <AnalyticsAndRecentTabs user={user} />
       </div>
     </div>
   );

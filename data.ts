@@ -1,6 +1,4 @@
-import { Test } from "./types/types";
-
-export const recentTests: Test[] = [
+export const recentTests = [
   {
     id: 1,
     url: "https://example.com",
