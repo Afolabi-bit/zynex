@@ -25,11 +25,7 @@ export async function syncUserToDatabase(user: KindeUser) {
 }
 
 export async function submitDomain(data: Domain) {
-  console.log("Submitting domain:", data);
-
   try {
-    // const cleanUrl = data.url.trim().replace(/\/$/, "");
-
     const existingDomain = await prisma.domain.findFirst({
       where: {
         url: data.url,
@@ -38,12 +34,17 @@ export async function submitDomain(data: Domain) {
     });
 
     if (existingDomain) {
+      const test = await prisma.test.create({
+        data: {
+          domainId: existingDomain.id,
+          status: "pending",
+        },
+      });
       return {
         success: false,
         message: "Domain already exists for user",
       };
     } else {
-      console.log("Domain does not exist for user, creating...");
       const domain = await prisma.domain.create({
         data: {
           url: data.url,
@@ -52,12 +53,16 @@ export async function submitDomain(data: Domain) {
           ownerId: data.userID,
         },
       });
-      console.log("Domain created:", domain.id);
+      const test = await prisma.test.create({
+        data: {
+          domainId: domain.id,
+          status: "pending",
+        },
+      });
     }
 
     return {
       success: true,
-      // domainId: domain.id,
       url: data.url,
     };
   } catch (error) {

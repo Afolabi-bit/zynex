@@ -40,11 +40,9 @@ model Test {
   id Int @id @default(autoincrement())
   domain Domain @relation(fields: [domainId], references: [id])
   domainId Int
-  metrics TestMetric[]
+  status    String  @default("pending")
+  createdAt DateTime @default(now())
+
+  @@index([domainId])
 }
 
-model TestMetric {
-  id Int @id @default(autoincrement())
-  test Test @relation(fields: [testId], references: [id])
-  testId Int
-}

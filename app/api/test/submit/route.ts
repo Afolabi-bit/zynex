@@ -7,8 +7,6 @@ export async function POST(request: Request) {
 
     const result = await submitDomain(data);
 
-    console.log("Domain submitted successfully:", result);
-
     return NextResponse.json(
       {
         message: "Test queued successfully",
