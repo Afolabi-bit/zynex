@@ -24,6 +24,31 @@ export async function syncUserToDatabase(user: KindeUser) {
   }
 }
 
+export async function updateTestStatus(status: string) {
+  try {
+    const test = await prisma.test.findFirst({
+      where: {
+        status: "pending",
+      },
+    });
+    if (!test) {
+      return null;
+    }
+    await prisma.test.update({
+      where: {
+        id: test.id,
+      },
+      data: {
+        status: status,
+      },
+    });
+    return test;
+  } catch (error) {
+    console.error("Error updating test status:", error);
+    throw new Error("Failed to update test status");
+  }
+}
+
 export async function submitDomain(data: Domain) {
   try {
     const existingDomain = await prisma.domain.findFirst({
@@ -34,6 +59,7 @@ export async function submitDomain(data: Domain) {
     });
 
     if (existingDomain) {
+      const lastTest = await updateTestStatus("failed");
       const test = await prisma.test.create({
         data: {
           domainId: existingDomain.id,
@@ -55,6 +81,8 @@ export async function submitDomain(data: Domain) {
           ownerId: data.userID,
         },
       });
+      const lastTest = await updateTestStatus("failed");
+
       const test = await prisma.test.create({
         data: {
           domainId: domain.id,
@@ -111,3 +139,31 @@ export async function getRecentTests(userID: string) {
     throw new Error("Failed to get recent tests");
   }
 }
+
+// export function pollRecentTests(
+//   userID: string,
+//   intervalMs = 5000,
+//   onUpdate?: (tests: any[]) => void
+// ) {
+//   const interval = setInterval(async () => {
+//     try {
+//       const tests = await prisma.test.findMany({
+//         where: {
+//           domain: {
+//             ownerId: userID,
+//           },
+//         },
+//         include: {
+//           domain: true,
+//         },
+//         orderBy: { createdAt: "desc" },
+//       });
+
+//       onUpdate?.(tests);
+//     } catch (error) {
+//       console.error("Polling recent tests failed:", error);
+//     }
+//   }, intervalMs);
+
+//   return () => clearInterval(interval);
+// }

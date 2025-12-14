@@ -55,7 +55,11 @@ const TestCard = ({
   return (
     <Card
       key={test.id}
-      className="hover:shadow-md transition-shadow cursor-pointer"
+      className={`hover:shadow-md transition-shadow cursor-pointer ${
+        test.status === "pending"
+          ? "opacity-70 bg-gray-100 cursor-not-allowed pointer-events-none"
+          : ""
+      }`}
     >
       <CardContent className="pt-6">
         <div className="flex items-start justify-between">

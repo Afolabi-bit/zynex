@@ -10,15 +10,10 @@ import {
   CardTitle,
 } from "../ui/card";
 import { Progress } from "../ui/progress";
-import TestCard from "./TestCard";
-import { getRecentTests } from "@/app/utils/actions";
 import { KindeUser } from "@kinde-oss/kinde-auth-nextjs";
+import RecentTests from "./RecentTests";
 
 const AnalyticsAndRecentTabs = async ({ user }: { user: KindeUser }) => {
-  const recentTestsDB = await getRecentTests(user.id);
-
-  console.log(recentTestsDB);
-
   return (
     <Tabs defaultValue="recent" className="space-y-6 mt-7">
       <TabsList>
@@ -35,22 +30,7 @@ const AnalyticsAndRecentTabs = async ({ user }: { user: KindeUser }) => {
         </div>
 
         <div className="space-y-4">
-          {recentTestsDB.map((test) => (
-            <TestCard
-              key={test.id}
-              id={test.id}
-              url={test.domain.url}
-              status={test.status}
-              date={new Date(test.createdAt).toLocaleString()}
-              device={test.domain.device}
-              score={null}
-              fcp={null}
-              lcp={null}
-              tti={null}
-              cls={null}
-              speedIndex={null}
-            />
-          ))}
+          <RecentTests user={user} />
         </div>
       </TabsContent>
 
