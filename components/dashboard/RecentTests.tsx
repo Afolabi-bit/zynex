@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { KindeUser } from "@kinde-oss/kinde-auth-nextjs";
 import { getRecentTests } from "@/app/utils/actions";
 import TestCard from "./TestCard";
+import { Loader2 } from "lucide-react";
 
 // Define the type for the data returned from getRecentTests
 type RecentTestData = {
@@ -39,20 +40,20 @@ const RecentTests = ({ user }: { user: KindeUser }) => {
       }
     };
 
-    // Fetch immediately on mount
     fetchTests();
 
-    // Set up polling every 5 seconds
     const intervalId = setInterval(fetchTests, 5000);
 
-    // Cleanup: clear interval when component unmounts
     return () => clearInterval(intervalId);
   }, [user.id]);
 
   if (loading) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        Loading recent tests...
+      <div className="flex items-center justify-center text-center py-8 text-gray-500">
+        <span className="flex items-center">
+          <Loader2 className="text-blue-600 h-4 w-4 mr-2 animate-spin" />
+          <span>Loading recent tests...</span>
+        </span>
       </div>
     );
   }
