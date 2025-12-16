@@ -49,7 +49,53 @@ export async function updateTestStatus(status: string) {
   }
 }
 
+async function runLighthouseAndSave(
+  testId: number,
+  url: string,
+  device: string,
+  network: string
+) {
+  try {
+    const response = await fetch("/api/test/run-lighthouse", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        url,
+        device,
+        network,
+      }),
+    });
+
+    const data = await response.json();
+
+    console.log(data);
+
+    await prisma.test.update({
+      where: { id: testId },
+      data: {
+        status: "completed",
+        // performanceScore: results.performanceScore,
+        // fcp: results.fcp,
+        // lcp: results.lcp,
+        // tbt: results.tbt,
+        // cls: results.cls,
+        // Store full report in database for now (we'll move to R2 later)
+      },
+    });
+  } catch (error) {
+    // Mark test as failed
+    await prisma.test.update({
+      where: { id: testId },
+      data: { status: "failed" },
+    });
+    throw error;
+  }
+}
+
 export async function submitDomain(data: Domain) {
+  let test;
   try {
     const existingDomain = await prisma.domain.findFirst({
       where: {
@@ -60,18 +106,12 @@ export async function submitDomain(data: Domain) {
 
     if (existingDomain) {
       const lastTest = await updateTestStatus("failed");
-      const test = await prisma.test.create({
+      test = await prisma.test.create({
         data: {
           domainId: existingDomain.id,
           status: "pending",
         },
       });
-
-      return {
-        success: true,
-        message: "New test submitted for existing domain",
-        testId: test.id,
-      };
     } else {
       const domain = await prisma.domain.create({
         data: {
@@ -83,18 +123,28 @@ export async function submitDomain(data: Domain) {
       });
       const lastTest = await updateTestStatus("failed");
 
-      const test = await prisma.test.create({
+      test = await prisma.test.create({
         data: {
           domainId: domain.id,
           status: "pending",
         },
       });
-      return {
-        success: true,
-        message: "New test submitted for new domain",
-        testId: test.id,
-      };
     }
+
+    // Run Lighthouse in the background (don't await)
+    await runLighthouseAndSave(
+      test.id,
+      data.url,
+      data.device,
+      data.network
+    ).catch((error) => {
+      console.error("Lighthouse failed:", error);
+    });
+    return {
+      success: true,
+      message: "New test submitted for new domain",
+      testId: test.id,
+    };
   } catch (error) {
     console.error("Error submitting domain:", error);
 

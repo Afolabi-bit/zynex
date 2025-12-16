@@ -33,25 +33,66 @@ const NewTest = ({ user }: { user: KindeUser }) => {
     }
 
     setIsTesting(true);
-    const req = await fetch("/api/test/submit", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userID: user.id,
-        url,
-        device,
-        network,
-      }),
-    });
 
-    const res = await req.json();
-    console.log(res);
+    try {
+      const req = await fetch("/api/test/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userID: user.id,
+          url,
+          device,
+          network,
+        }),
+      });
 
-    const test = await fetch(`/api/test/${res.data.testId}/status`);
-    const testRes = await test.json();
-    console.log(testRes);
+      const res = await req.json();
+
+      const testId = res.data.testId;
+
+      // Poll for test status every 2 seconds
+      let pollInterval: NodeJS.Timeout | null = null;
+
+      pollInterval = setInterval(async () => {
+        try {
+          const statusResponse = await fetch(`/api/test/${testId}/status`);
+          const statusData = await statusResponse.json();
+
+          // Check if test is completed or failed
+          if (statusData.status === "completed") {
+            if (pollInterval) clearInterval(pollInterval);
+            setIsTesting(false);
+            setUrl(""); // Clear the input field
+            // Optionally show success message
+            console.log("Test completed successfully!");
+          } else if (statusData.status === "failed") {
+            if (pollInterval) clearInterval(pollInterval);
+            setIsTesting(false);
+            // Optionally show error message
+            console.error("Test failed");
+          }
+          // If status is still "pending", continue polling
+        } catch (error) {
+          console.error("Error polling test status:", error);
+          if (pollInterval) clearInterval(pollInterval);
+          setIsTesting(false);
+        }
+      }, 2000); // Poll every 2 seconds
+
+      // Optional: Set a maximum timeout (e.g., 5 minutes)
+      setTimeout(() => {
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          setIsTesting(false);
+          console.error("Test timeout - took too long");
+        }
+      }, 300000); // 5 minutes timeout
+    } catch (error) {
+      console.error("Error submitting test:", error);
+      setIsTesting(false);
+    }
   };
 
   return (
@@ -74,6 +115,7 @@ const NewTest = ({ user }: { user: KindeUser }) => {
             <Label htmlFor="url">Website URL</Label>
             <Input
               id="url"
+              value={url}
               placeholder="https://example.com"
               onChange={(e) => setUrl(e.target.value)}
               onClick={() => setIsUrlValid({ validity: true, message: "" })}
