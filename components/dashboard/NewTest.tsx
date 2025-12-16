@@ -14,6 +14,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import isValidUrl from "@/app/utils/validateUrl";
 import { KindeUser } from "@kinde-oss/kinde-auth-nextjs";
+import { mutate } from "swr";
 
 const NewTest = ({ user }: { user: KindeUser }) => {
   const [url, setUrl] = useState("");
@@ -52,6 +53,9 @@ const NewTest = ({ user }: { user: KindeUser }) => {
 
       const testId = res.data.testId;
 
+      // Immediately refresh the tests list to show the new pending test
+      mutate(`/api/tests/recent?userId=${user.id}`);
+
       // Poll for test status every 2 seconds
       let pollInterval: NodeJS.Timeout | null = null;
 
@@ -65,13 +69,15 @@ const NewTest = ({ user }: { user: KindeUser }) => {
             if (pollInterval) clearInterval(pollInterval);
             setIsTesting(false);
             setUrl(""); // Clear the input field
-            // Optionally show success message
+            // Refresh the tests list to show updated status
+            mutate(`/api/tests/recent?userId=${user.id}`);
             console.log("Test completed successfully!");
           } else if (statusData.status === "failed") {
             if (pollInterval) clearInterval(pollInterval);
             setIsTesting(false);
-            // Optionally show error message
-            console.error("Test failed");
+            // Refresh the tests list to show failed status
+            mutate(`/api/tests/recent?userId=${user.id}`);
+            console.log("Test failed - check server logs for details");
           }
           // If status is still "pending", continue polling
         } catch (error) {

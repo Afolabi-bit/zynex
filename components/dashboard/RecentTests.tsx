@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { KindeUser } from "@kinde-oss/kinde-auth-nextjs";
-import { getRecentTests } from "@/app/utils/actions";
 import TestCard from "./TestCard";
 import { Loader2 } from "lucide-react";
+import useSWR from "swr";
 
-// Define the type for the data returned from getRecentTests
+// Define the type for the data returned from the API
 type RecentTestData = {
   id: number;
   createdAt: Date;
@@ -23,31 +22,22 @@ type RecentTestData = {
   };
 };
 
+// Fetcher function for SWR
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
 const RecentTests = ({ user }: { user: KindeUser }) => {
-  // Properly type the state with the RecentTestData array
-  const [tests, setTests] = useState<RecentTestData[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Use SWR for data fetching with automatic revalidation
+  const { data, error, isLoading } = useSWR(
+    `/api/tests/recent?userId=${user.id}`,
+    fetcher,
+    {
+      refreshInterval: 5000, // Refresh every 5 seconds
+      revalidateOnFocus: true, // Revalidate when window regains focus
+      revalidateOnReconnect: true, // Revalidate when reconnecting
+    }
+  );
 
-  useEffect(() => {
-    const fetchTests = async () => {
-      try {
-        const recentTests = await getRecentTests(user.id);
-        setTests(recentTests);
-      } catch (error) {
-        console.error("Error fetching recent tests:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTests();
-
-    const intervalId = setInterval(fetchTests, 5000);
-
-    return () => clearInterval(intervalId);
-  }, [user.id]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center text-center py-8 text-gray-500">
         <span className="flex items-center">
@@ -57,6 +47,16 @@ const RecentTests = ({ user }: { user: KindeUser }) => {
       </div>
     );
   }
+
+  if (error) {
+    return (
+      <div className="text-center py-8 text-red-500">
+        Failed to load tests. Please try again.
+      </div>
+    );
+  }
+
+  const tests: RecentTestData[] = data?.tests || [];
 
   if (tests.length === 0) {
     return (

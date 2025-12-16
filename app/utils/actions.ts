@@ -56,21 +56,35 @@ async function runLighthouseAndSave(
   network: string
 ) {
   try {
-    const response = await fetch("/api/test/run-lighthouse", {
+    // Get the base URL for API calls (server-side needs absolute URL)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+    const response = await fetch(`${baseUrl}/api/lighthouse`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         url,
-        device,
+        device: device.toLowerCase(), // Convert to lowercase (Desktop -> desktop)
         network,
       }),
     });
 
     const data = await response.json();
 
-    console.log(data);
+    if (!response.ok || !data.success) {
+      console.error("Lighthouse API error:", {
+        status: response.status,
+        data,
+      });
+      throw new Error(data.error || "Lighthouse API request failed");
+    }
+
+    console.log("Lighthouse completed successfully:", {
+      testId,
+      performanceScore: data.results.performanceScore,
+    });
 
     await prisma.test.update({
       where: { id: testId },
@@ -85,6 +99,12 @@ async function runLighthouseAndSave(
       },
     });
   } catch (error) {
+    console.error("Lighthouse test failed:", {
+      testId,
+      url,
+      error: error instanceof Error ? error.message : error,
+    });
+
     // Mark test as failed
     await prisma.test.update({
       where: { id: testId },
@@ -131,15 +151,14 @@ export async function submitDomain(data: Domain) {
       });
     }
 
-    // Run Lighthouse in the background (don't await)
-    await runLighthouseAndSave(
-      test.id,
-      data.url,
-      data.device,
-      data.network
-    ).catch((error) => {
-      console.error("Lighthouse failed:", error);
-    });
+    // Run Lighthouse in the background (don't await - fire and forget)
+    runLighthouseAndSave(test.id, data.url, data.device, data.network).catch(
+      (error) => {
+        console.error("Lighthouse failed:", error);
+      }
+    );
+
+    // Return immediately so UI can update with pending test
     return {
       success: true,
       message: "New test submitted for new domain",
