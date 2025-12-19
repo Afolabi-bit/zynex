@@ -71,14 +71,62 @@ async function runLighthouseAndSave(
       }),
     });
 
-    const data = await response.json();
+    // Check if response is OK before attempting to parse JSON
+    if (!response.ok) {
+      let errorMessage = `Lighthouse API request failed with status ${response.status}`;
 
-    if (!response.ok || !data.success) {
-      console.error("Lighthouse API error:", {
-        status: response.status,
-        data,
+      // Try to get error details from response
+      try {
+        const errorText = await response.text();
+        console.error("Lighthouse API error response:", {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText,
+        });
+
+        // Try to parse as JSON if possible
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch {
+          // If not JSON, use the text as-is
+          errorMessage = errorText || errorMessage;
+        }
+      } catch (textError) {
+        console.error("Failed to read error response:", textError);
+      }
+
+      throw new Error(errorMessage);
+    }
+
+    // Parse JSON response with error handling
+    let data;
+    try {
+      const responseText = await response.text();
+
+      if (!responseText || responseText.trim() === "") {
+        throw new Error("Lighthouse API returned an empty response");
+      }
+
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error("Failed to parse Lighthouse API response:", {
+        error: parseError instanceof Error ? parseError.message : parseError,
+        responseStatus: response.status,
+        responseHeaders: Object.fromEntries(response.headers.entries()),
       });
-      throw new Error(data.error || "Lighthouse API request failed");
+      throw new Error(
+        `Failed to parse Lighthouse API response: ${
+          parseError instanceof Error ? parseError.message : "Unknown error"
+        }`
+      );
+    }
+
+    if (!data.success) {
+      console.error("Lighthouse API returned unsuccessful result:", data);
+      throw new Error(
+        data.error || data.message || "Lighthouse API request failed"
+      );
     }
 
     console.log("Lighthouse completed successfully:", {
