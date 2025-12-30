@@ -22,18 +22,16 @@ type RecentTestData = {
   };
 };
 
-// Fetcher function for SWR
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 const RecentTests = ({ user }: { user: KindeUser }) => {
-  // Use SWR for data fetching with automatic revalidation
   const { data, error, isLoading } = useSWR(
     `/api/tests/recent?userId=${user.id}`,
     fetcher,
     {
-      refreshInterval: 5000, // Refresh every 5 seconds
-      revalidateOnFocus: true, // Revalidate when window regains focus
-      revalidateOnReconnect: true, // Revalidate when reconnecting
+      refreshInterval: 5000,
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
     }
   );
 

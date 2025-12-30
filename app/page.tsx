@@ -3,9 +3,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Zap, BarChart3, Shield, Clock, TrendingUp, Users } from "lucide-react";
 import Link from "next/link";
-import { LoginLink, RegisterLink } from "@kinde-oss/kinde-auth-nextjs";
+import {
+  KindeUser,
+  LoginLink,
+  RegisterLink,
+} from "@kinde-oss/kinde-auth-nextjs";
+import getSessionUser from "@/lib/auth";
+import { redirect } from "next/navigation";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const user = (await getSessionUser()) as KindeUser | null;
+
+  if (user) {
+    redirect("/dashboard");
+  }
+
   return (
     <div className="min-h-screen bg-linear-to-b from-slate-50 to-white">
       {/* Navigation */}

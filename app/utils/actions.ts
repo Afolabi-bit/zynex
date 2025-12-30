@@ -66,7 +66,7 @@ async function runLighthouseAndSave(
       },
       body: JSON.stringify({
         url,
-        device: device.toLowerCase(), // Convert to lowercase (Desktop -> desktop)
+        device: device.toLowerCase(),
         network,
       }),
     });
@@ -199,14 +199,15 @@ export async function submitDomain(data: Domain) {
       });
     }
 
-    // Run Lighthouse in the background (don't await - fire and forget)
-    runLighthouseAndSave(test.id, data.url, data.device, data.network).catch(
-      (error) => {
-        console.error("Lighthouse failed:", error);
-      }
-    );
+    await runLighthouseAndSave(
+      test.id,
+      data.url,
+      data.device,
+      data.network
+    ).catch((error) => {
+      console.error("Lighthouse failed:", error);
+    });
 
-    // Return immediately so UI can update with pending test
     return {
       success: true,
       message: "New test submitted for new domain",
@@ -256,31 +257,3 @@ export async function getRecentTests(userID: string) {
     throw new Error("Failed to get recent tests");
   }
 }
-
-// export function pollRecentTests(
-//   userID: string,
-//   intervalMs = 5000,
-//   onUpdate?: (tests: any[]) => void
-// ) {
-//   const interval = setInterval(async () => {
-//     try {
-//       const tests = await prisma.test.findMany({
-//         where: {
-//           domain: {
-//             ownerId: userID,
-//           },
-//         },
-//         include: {
-//           domain: true,
-//         },
-//         orderBy: { createdAt: "desc" },
-//       });
-
-//       onUpdate?.(tests);
-//     } catch (error) {
-//       console.error("Polling recent tests failed:", error);
-//     }
-//   }, intervalMs);
-
-//   return () => clearInterval(interval);
-// }

@@ -1,4 +1,4 @@
-// app/api/test/run-lighthouse/route.ts
+// app/api/lighthouse/route.ts
 import { NextResponse } from "next/server";
 import lighthouse from "lighthouse";
 import * as chromeLauncher from "chrome-launcher";
