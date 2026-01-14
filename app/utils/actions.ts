@@ -2,7 +2,7 @@
 
 import prisma from "@/lib/db";
 import { KindeUser } from "@kinde-oss/kinde-auth-nextjs";
-import { Domain } from "../types/databaseTypes";
+import { runLighthouseAudit } from "@/lib/lighthouse-runner";
 
 export async function syncUserToDatabase(user: KindeUser) {
   try {
@@ -49,6 +49,13 @@ export async function updateTestStatus(status: string) {
   }
 }
 
+interface Domain {
+  url: string;
+  device: string;
+  network: string;
+  userID: string;
+}
+
 async function runLighthouseAndSave(
   testId: number,
   url: string,
@@ -56,9 +63,20 @@ async function runLighthouseAndSave(
   network: string
 ) {
   try {
-    // Get the base URL for API calls (server-side needs absolute URL)
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    console.log("🚀 Starting Lighthouse test:", {
+      testId,
+      url,
+      device,
+      network,
+    });
 
+    // Get the app URL - use environment variable or construct it
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000";
+
+    // Call the API route (this is OK from a server action)
     const response = await fetch(`${baseUrl}/api/lighthouse`, {
       method: "POST",
       headers: {
@@ -71,69 +89,30 @@ async function runLighthouseAndSave(
       }),
     });
 
-    // Check if response is OK before attempting to parse JSON
     if (!response.ok) {
-      let errorMessage = `Lighthouse API request failed with status ${response.status}`;
-
-      // Try to get error details from response
-      try {
-        const errorText = await response.text();
-        console.error("Lighthouse API error response:", {
-          status: response.status,
-          statusText: response.statusText,
-          body: errorText,
-        });
-
-        // Try to parse as JSON if possible
-        try {
-          const errorData = JSON.parse(errorText);
-          errorMessage = errorData.error || errorData.message || errorMessage;
-        } catch {
-          // If not JSON, use the text as-is
-          errorMessage = errorText || errorMessage;
-        }
-      } catch (textError) {
-        console.error("Failed to read error response:", textError);
-      }
-
-      throw new Error(errorMessage);
-    }
-
-    // Parse JSON response with error handling
-    let data;
-    try {
-      const responseText = await response.text();
-
-      if (!responseText || responseText.trim() === "") {
-        throw new Error("Lighthouse API returned an empty response");
-      }
-
-      data = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error("Failed to parse Lighthouse API response:", {
-        error: parseError instanceof Error ? parseError.message : parseError,
-        responseStatus: response.status,
-        responseHeaders: Object.fromEntries(response.headers.entries()),
-      });
+      const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        `Failed to parse Lighthouse API response: ${
-          parseError instanceof Error ? parseError.message : "Unknown error"
-        }`
+        errorData.message ||
+          `Lighthouse API failed with status ${response.status}`
       );
     }
+
+    const data = await response.json();
 
     if (!data.success) {
-      console.error("Lighthouse API returned unsuccessful result:", data);
       throw new Error(
-        data.error || data.message || "Lighthouse API request failed"
+        data.error || "Lighthouse API returned unsuccessful result"
       );
     }
 
-    console.log("Lighthouse completed successfully:", {
+    const results = data.results;
+
+    console.log("✅ Lighthouse completed successfully:", {
       testId,
-      performanceScore: data.results.performanceScore,
+      performanceScore: results.performanceScore,
     });
 
+    // Update test with results
     await prisma.test.update({
       where: { id: testId },
       data: {
@@ -143,11 +122,13 @@ async function runLighthouseAndSave(
         // lcp: results.lcp,
         // tbt: results.tbt,
         // cls: results.cls,
-        // Store full report in database for now (we'll move to R2 later)
+        // fullReport: results.fullReport, // Uncomment if needed
       },
     });
+
+    return results;
   } catch (error) {
-    console.error("Lighthouse test failed:", {
+    console.error("❌ Lighthouse test failed:", {
       testId,
       url,
       error: error instanceof Error ? error.message : error,
@@ -158,6 +139,7 @@ async function runLighthouseAndSave(
       where: { id: testId },
       data: { status: "failed" },
     });
+
     throw error;
   }
 }
@@ -173,7 +155,7 @@ export async function submitDomain(data: Domain) {
     });
 
     if (existingDomain) {
-      const lastTest = await updateTestStatus("failed");
+      await updateTestStatus("failed");
       test = await prisma.test.create({
         data: {
           domainId: existingDomain.id,
@@ -189,7 +171,8 @@ export async function submitDomain(data: Domain) {
           ownerId: data.userID,
         },
       });
-      const lastTest = await updateTestStatus("failed");
+
+      await updateTestStatus("failed");
 
       test = await prisma.test.create({
         data: {
@@ -199,24 +182,21 @@ export async function submitDomain(data: Domain) {
       });
     }
 
-    await runLighthouseAndSave(
-      test.id,
-      data.url,
-      data.device,
-      data.network
-    ).catch((error) => {
-      console.error("Lighthouse failed:", error);
-    });
+    // Run Lighthouse in background
+    runLighthouseAndSave(test.id, data.url, data.device, data.network).catch(
+      (error) => {
+        console.error("❌ Background Lighthouse test failed:", error);
+      }
+    );
 
     return {
       success: true,
-      message: "New test submitted for new domain",
+      message: "Test submitted successfully",
       testId: test.id,
     };
   } catch (error) {
-    console.error("Error submitting domain:", error);
+    console.error("❌ Error submitting domain:", error);
 
-    // Re-throw the error with a clear message
     if (error instanceof Error) {
       throw new Error(`Failed to submit domain: ${error.message}`);
     }
