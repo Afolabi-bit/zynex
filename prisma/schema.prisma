@@ -41,6 +41,12 @@ model Test {
   domain Domain @relation(fields: [domainId], references: [id])
   domainId Int
   status    String  @default("pending")
+  performanceScore Int?
+  fcp             Float?
+  lcp             Float?
+  tbt             Float?
+  cls             Float?
+  fullReport      Json?
   createdAt DateTime @default(now())
 
   @@index([domainId])
